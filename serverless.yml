@@ -2,18 +2,15 @@ service: edge-rewrite
 provider:
   name: aws
   runtime: nodejs6.10
-  stage: ${opt:stage, self:custom.defaultStage}
-  profile: ${self:custom.profiles.${self:provider.stage}}
-
-custom:
-  defaultStage: dev
-  profiles:
-    dev: foo
+  region: us-east-1
+  deploymentBucket:
+    name: dev-smartrx-mh-artifacts
+    serverSideEncryption: AES256
 
 functions:
   redirects:
     handler: handler.handler
-    role: edgeRewriteRole0
+    role: arn:aws:iam::855795768442:role/LambdaLoggingRole
     memorySize: 128
     timeout: 1
 
@@ -23,30 +20,3 @@ plugins:
 
 package:
   individually: true
-
-resources:
-  Resources:
-    edgeRewriteRole0:
-      Type: AWS::IAM::Role
-      Properties:
-        RoleName: edgeRewriteRole-${self:provider.stage}
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-                  - edgelambda.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          - PolicyName: edgeRewriteRolePolicy-${self:provider.stage}
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - logs:CreateLogGroup
-                    - logs:CreateLogStream
-                    - logs:PutLogEvents
-                  Resource: arn:aws:logs:${opt:region, self:provider.region}::log-group:/aws/lambda/*:*:*
